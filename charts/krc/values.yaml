@@ -1,0 +1,420 @@
+nginx-ingress-internal:
+  enabled: true
+  controller:
+    name: controller
+    image:
+      repository: quay.io/kubernetes-ingress-controller/nginx-ingress-controller
+      tag: "0.21.0"
+
+    electionID: ingress-controller-leader-internal
+    ingressClass: nginx-internal
+
+    publishService:
+      enabled: true
+      pathOverride: krc/krc-nginx-ingress-internal-controller
+
+    service:
+      annotations:
+        service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: 3600
+        service.beta.kubernetes.io/aws-load-balancer-internal: true
+
+    autoscaling:
+      enabled: true
+      minReplicas: 1
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 50
+      targetMemoryUtilizationPercentage: 50
+
+    stats:
+      enabled: true
+
+    metrics:
+      enabled: true
+      service:
+        annotations: {}
+
+
+nginx-ingress-public:
+  enabled: true
+  controller:
+    name: controller
+    image:
+      repository: quay.io/kubernetes-ingress-controller/nginx-ingress-controller
+      tag: "0.21.0"
+
+    electionID: ingress-controller-leader-public
+    ingressClass: nginx-public
+
+    publishService:
+      enabled: true
+      pathOverride: krc/krc-nginx-ingress-public-controller
+
+    service:
+      annotations:
+        service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: 3600
+
+    autoscaling:
+      enabled: true
+      minReplicas: 1
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 50
+      targetMemoryUtilizationPercentage: 50
+
+    stats:
+      enabled: true
+
+    metrics:
+      enabled: true
+      service:
+        annotations: {}
+
+
+external-dns:
+  enabled: true
+  image:
+    name: registry.opensource.zalan.do/teapot/external-dns
+    tag: v0.5.9
+
+  provider: aws
+
+  sources:
+    - service
+    - ingress
+
+  rbac:
+    create: true
+
+  aws:
+    zoneType: private
+
+  nodeSelector:
+    kubernetes.io/role: master
+
+  tolerations:
+    - key: node-role.kubernetes.io/master
+      effect: NoSchedule
+    - key: dedicated
+      value: master
+
+
+kube2iam:
+  enabled: true
+  image:
+    repository: jtblin/kube2iam
+    tag: 0.10.0
+
+  host:
+    interface: cali+
+    iptables: true
+
+  updateStrategy: RollingUpdate
+
+  rbac:
+    create: true
+
+  verbose: true
+
+  tolerations: {}
+#    - key: dedicated
+#      operator: Equal
+#      value: special-node
+#      effect: NoSchedule
+
+
+kubernetes-dashboard:
+  enabled: true
+  extraArgs:
+    - --heapster-host=http://heapster.krc:8082
+
+  rbac:
+    create: true
+    clusterAdminRole: true
+
+  service:
+    type: NodePort
+
+  ingress:
+    enabled: true
+    annotations:
+      kubernetes.io/ingress.class: "nginx-internal"
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+      nginx.org/ssl-services: "kubernetes-dashboard"
+
+    path: /
+    hosts: []
+#      - kdash.example.com
+
+    tls: []
+#      - secretName: example-com-cert
+#        hosts:
+#          - kdash.example.com
+
+
+heapster:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: k8s.gcr.io/heapster
+    tag: v1.5.2
+
+  rbac:
+    create: true
+
+
+metrics-server:
+  enabled: true
+  rbac:
+    create: true
+
+  args:
+    - --logtostderr
+    - --kubelet-insecure-tls
+    - --kubelet-preferred-address-types=InternalIP
+
+
+cluster-autoscaler:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: k8s.gcr.io/cluster-autoscaler
+    tag: v1.12.0
+
+  rbac:
+    create: true
+
+  nodeSelector:
+    kubernetes.io/role: master
+
+  tolerations:
+    - key: node-role.kubernetes.io/master
+      effect: NoSchedule
+    - key: dedicated
+      value: master
+
+  autoDiscovery: {}
+#    clusterName: k8s.example.com
+
+  cloudProvider: aws
+#  awsRegion: us-east-1
+
+
+elastic-stack:
+  enabled: false
+  kibana:
+    image:
+      repository: docker.elastic.co/kibana/kibana
+      tag: "6.5.4"
+
+    env:
+      ELASTICSEARCH_URL: http://krc-elasticsearch-client.krc:9200
+
+    plugins:
+      enabled: false
+      # set to true to remove all kibana plugins before installation
+      reset: false
+      # Use <plugin_name,version,url> to add/upgrade plugin
+      values: []
+#        - elastalert-kibana-plugin,1.0.1,https://github.com/bitsensor/elastalert-kibana-plugin/releases/download/1.0.1/elastalert-kibana-plugin-1.0.1-6.5.4.zip
+#        - logtrail,0.1.30,https://github.com/sivasamyk/logtrail/releases/download/v0.1.30/logtrail-6.5.4-0.1.30.zip
+#        - sentinl,6.5.0-0,https://github.com/sirensolutions/sentinl/releases/download/tag-6.5.0-0/sentinl-v6.5.4.zip
+
+    service:
+      type: NodePort
+
+    ingress:
+      enabled: true
+      annotations:
+        kubernetes.io/ingress.class: "nginx-internal"
+
+      hosts: []
+#        - kibana.example.com
+
+      tls: []
+#        - secretName: example-com-cert
+#          hosts:
+#            - kibana.example.com
+
+  elasticsearch:
+    image:
+      repository: docker.elastic.co/elasticsearch/elasticsearch
+      tag: "6.5.4"
+
+  logstash:
+    enabled: true
+
+    image:
+      repository: docker.elastic.co/logstash/logstash
+      tag: "6.5.4"
+
+    config:
+      xpack.monitoring.enabled: true
+      xpack.monitoring.elasticsearch.url: "http://krc-elasticsearch-client.krc:9200"
+
+    elasticsearch:
+      host: krc-elasticsearch-client.krc
+      port: 9200
+
+    service: {}
+#      ports:
+#        app-logs:
+#          port: 1234
+#          targetPort: logs
+#          protocol: TCP
+
+    ports: []
+#      - name: logs
+#        containerPort: 1234
+#        protocol: TCP
+
+    inputs: {}
+#      main: |-
+#        input {
+#          tcp {
+#            port => 9000
+#            codec => json
+#          }
+#        }
+
+    filters: {}
+#      main: |-
+#        filter {
+#          grok {
+#            match => { "message" => ""}
+#          }
+#        }
+
+    outputs: {}
+#      main: |-
+#        output {
+#          elasticsearch {
+#            hosts => ["http://krc-elasticsearch-client.krc:9200"]
+#            index => "app-logs-%{+YYYY.MM.dd}"
+#          }
+#        }
+
+
+  filebeat:
+    extraVolumes:
+      - name: dockersock
+        hostPath:
+          path: /var/run/docker.sock
+
+    extraVolumeMounts:
+      - name: dockersock
+        mountPath: "/var/run/docker.sock"
+
+    config:
+      output.file.enabled: false
+      output.elasticsearch:
+        enabled: true
+        hosts: ["http://krc-elasticsearch-client.krc:9200"]
+
+      filebeat.prospectors:
+#        - type: log
+#          enabled: true
+#          paths:
+#            - /var/lib/docker/containers/*/*.log
+#          json.message_key: log
+#          json.keys_under_root: true
+#          processors:
+#            - add_docker_metadata: ~
+        - type: docker
+          containers.ids:
+            - "*"
+          processors:
+            - add_kubernetes_metadata:
+                in_cluster: true
+            - drop_event:
+                when:
+                  equals:
+                    kubernetes.container.name: "filebeat"
+
+    tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      - key: dedicated
+        value: master
+
+
+# helm bug, need to enable outside elastic-stack scope
+filebeat:
+  enabled: false
+
+
+prometheus:
+  enabled: false
+  nodeExporter:
+    tolerations: {}
+#      - key: dedicated
+#        operator: Equal
+#        value: special-node
+#        effect: NoSchedule
+
+  server:
+    enableAdminApi: true
+
+    service:
+      type: NodePort
+      servicePort: 80
+
+    ingress:
+      enabled: false
+      annotations:
+        kubernetes.io/ingress.class: nginx-internal
+      hosts: []
+#        - prometheus.example.com
+
+
+  extraScrapeConfigs: |
+    - job_name: nginx-private-ingress
+      scrape_interval: 30s
+      metrics_path: /metrics
+      honor_labels: true
+      scheme: http
+      static_configs:
+        - targets: ['krc-nginx-ingress-public-controller-metrics.krc:9913']
+
+    - job_name: nginx-public-ingress
+      scrape_interval: 30s
+      metrics_path: /metrics
+      honor_labels: true
+      scheme: http
+      static_configs:
+        - targets: ['krc-nginx-ingress-internal-controller-metrics.krc:9913']
+
+
+grafana:
+  enabled: false
+#  adminPassword: admin
+
+  plugins: []
+#    - grafana-kubernetes-app
+
+  grafana.ini: {}
+#    auth.anonymous:
+#      enabled: true
+
+  datasources: {}
+#    datasources.yaml:
+#      apiVersion: 1
+#      datasources:
+#        - name: Prometheus
+#          type: prometheus
+#          url: http://prometheus.example.com
+#          isDefault: true
+
+  persistence:
+    enabled: false
+
+  service:
+    type: NodePort
+    port: 80
+
+  ingress:
+    enabled: false
+    annotations:
+      kubernetes.io/ingress.class: nginx-internal
+    hosts: []
+#      - grafana.example.com

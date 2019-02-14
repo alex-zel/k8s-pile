@@ -1,0 +1,58 @@
+kubernetes-dashboard:
+  ingress:
+    enabled: true
+    hosts:
+      - kdash.example.com
+    tls:
+      - secretName: k8s-example-com-cert
+        hosts:
+          - kdash.k8s.example.com
+
+
+cluster-autoscaler:
+  awsRegion: us-east-1
+  autoDiscovery:
+    clusterName: k8s.example.com
+
+
+elastic-stack:
+  kibana:
+    ingress:
+      enabled: true
+      hosts:
+        - kibana.k8s.example.com
+      tls:
+        - secretName: k8s-example-com-cert
+          hosts:
+            - kibana.k8s.example.com
+
+
+prometheus:
+  server:
+    ingress:
+      enabled: true
+      hosts:
+        - prometheus.k8s.example.com
+
+
+grafana:
+  adminPassword: admin
+
+  plugins:
+    - grafana-kubernetes-app
+
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          url: http://prometheus.k8s.example.com
+          isDefault: true
+
+  ingress:
+    enabled: true
+    annotations:
+      kubernetes.io/ingress.class: nginx-internal
+    hosts:
+      - grafana.k8s.example.com

@@ -1,0 +1,333 @@
+Master:
+  Name: jenkins-master
+  Image: jenkins/jenkins
+  ImageTag: 2.153-slim
+  ImagePullPolicy: Always
+  Component: jenkins-master
+  UseSecurity: true
+  # SecurityRealm
+  HostNetworking: false
+  AdminUser: admin
+  AdminPassword: admin
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+  # Environment variables that get added to the init container (useful for e.g. http_proxy)
+  # InitContainerEnv:
+  #   - name: http_proxy
+  #     value: "http://192.168.64.1:3128"
+  # ContainerEnv:
+  #   - name: http_proxy
+  #     value: "http://192.168.64.1:3128"
+  # Set min/max heap here if needed with:
+  # JavaOpts: "-Xms512m -Xmx512m"
+  JenkinsOpts: "-Dpermissive-script-security.enabled=true"
+  # If you set this prefix and use ingress controller then you might want to set the ingress path below
+  # JenkinsUriPrefix: "/jenkins"
+  # Enable pod security context (must be `true` if RunAsUser or FsGroup are set)
+  UsePodSecurityContext: true
+  # Set RunAsUser to 1000 to let Jenkins run as non-root user 'jenkins' which exists in 'jenkins/jenkins' docker image.
+  # When setting RunAsUser to a different value than 0 also set FsGroup to the same value:
+  RunAsUser: 1000
+  FsGroup: 1000
+  ServicePort: 8080
+  ServiceType: NodePort
+  # Master Service annotations
+  ServiceAnnotations: {}
+#    alb.ingress.kubernetes.io/healthcheck-path: /login
+  # Master Service Labels
+  ServiceLabels: {}
+  #   service.beta.kubernetes.io/aws-load-balancer-backend-protocol: https
+  # Used to create Ingress record (should used with ServiceType: ClusterIP)
+  HostName: jenkins.k8s.example.com
+  # NodePort: <to set explicitly, choose port between 30000-32767
+  # Enable Kubernetes Liveness and Readiness Probes
+  # ~ 2 minutes to allow Jenkins to restart when upgrading plugins. Set ReadinessTimeout to be shorter than LivenessTimeout.
+  HealthProbes: true
+  HealthProbesLivenessTimeout: 90
+  HealthProbesReadinessTimeout: 60
+  HealthProbeLivenessFailureThreshold: 12
+  SlaveListenerPort: 50000
+  DisabledAgentProtocols:
+    - JNLP-connect
+    - JNLP2-connect
+  CSRF:
+    DefaultCrumbIssuer:
+      Enabled: true
+      ProxyCompatability: true
+  CLI: false
+  # Kubernetes service type for the JNLP slave service
+  SlaveListenerServiceType: ClusterIP
+  SlaveListenerServiceAnnotations: {}
+  # Optionally configure other ports to expose in the Master container
+  ExtraPorts:
+  # - name: BuildInfoProxy
+  #   port: 9000
+  # List of plugins to be install during Jenkins master start
+  InstallPlugins:
+    - ace-editor:1.1
+    - amazon-ecr:1.6
+    - apache-httpcomponents-client-4-api:4.5.5-3.0
+    - authentication-tokens:1.3
+    - aws-credentials:1.24
+    - aws-java-sdk:1.11.403
+    - blueocean-autofavorite:1.2.2
+    - blueocean-bitbucket-pipeline:1.9.0
+    - blueocean-commons:1.9.0
+    - blueocean-config:1.9.0
+    - blueocean-core-js:1.9.0
+    - blueocean-dashboard:1.9.0
+    - blueocean-display-url:2.2.0
+    - blueocean-events:1.9.0
+    - blueocean-git-pipeline:1.9.0
+    - blueocean-github-pipeline:1.9.0
+    - blueocean-i18n:1.9.0
+    - blueocean-jira:1.9.0
+    - blueocean-jwt:1.9.0
+    - blueocean-personalization:1.9.0
+    - blueocean-pipeline-api-impl:1.9.0
+    - blueocean-pipeline-editor:1.9.0
+    - blueocean-pipeline-scm-api:1.9.0
+    - blueocean-rest-impl:1.9.0
+    - blueocean-rest:1.9.0
+    - blueocean-web:1.9.0
+    - blueocean:1.9.0
+    - bouncycastle-api:2.17
+    - branch-api:2.1.1
+    - build-failure-analyzer:1.20.0
+    - cloudbees-bitbucket-branch-source:2.2.15
+    - cloudbees-folder:6.7
+    - cobertura:1.13
+    - code-coverage-api:1.0.5
+    - command-launcher:1.2
+    - credentials-binding:1.17
+    - credentials:2.1.18
+    - cucumber-reports:4.2.2
+    - cucumber-slack-notifier:0.8.3
+    - display-url-api:2.3.0
+    - docker-commons:1.13
+    - docker-workflow:1.17
+    - durable-task:1.28
+    - favorite:2.3.2
+    - ghprb:1.42.0
+    - git-client:2.7.4
+    - git-server:1.7
+    - git:3.9.1
+    - github-api:1.95
+    - github-branch-source:2.4.1
+    - github:1.29.3
+    - handlebars:1.1.1
+    - handy-uri-templates-2-api:2.1.6-1.0
+    - htmlpublisher:1.17
+    - jackson2-api:2.9.7.1
+    - jdk-tool:1.1
+    - jenkins-design-language:1.9.0
+    - jira:3.0.5
+    - jquery-detached:1.2.1
+    - jsch:0.1.54.2
+    - junit:1.26.1
+    - kubernetes-credentials:0.4.0
+    - kubernetes:1.13.6
+    - lockable-resources:2.3
+    - mailer:1.22
+    - mask-passwords:2.12.0
+    - matrix-project:1.13
+    - mercurial:2.4
+    - momentjs:1.1.1
+    - parameter-separator:1.0
+    - pipeline-build-step:2.7
+    - pipeline-graph-analysis:1.9
+    - pipeline-input-step:2.8
+    - pipeline-milestone-step:1.3.1
+    - pipeline-model-api:1.3.3
+    - pipeline-model-declarative-agent:1.1.1
+    - pipeline-model-definition:1.3.3
+    - pipeline-model-extensions:1.3.3
+    - pipeline-rest-api:2.10
+    - pipeline-stage-step:2.3
+    - pipeline-stage-tags-metadata:1.3.3
+    - pipeline-stage-view:2.10
+    - plain-credentials:1.4
+    - pubsub-light:1.12
+    - scm-api:2.3.0
+    - script-security:1.48
+    - simple-theme-plugin:0.5.1
+    - slack:2.3
+    - sse-gateway:1.16
+    - ssh-credentials:1.14
+    - structs:1.17
+    - token-macro:2.5
+    - variant:1.1
+    - workflow-api:2.33
+    - workflow-basic-steps:2.12
+    - workflow-cps-global-lib:2.12
+    - workflow-cps:2.60
+    - workflow-durable-task-step:2.26
+    - workflow-job:2.29
+    - workflow-multibranch:2.20
+    - workflow-scm-step:2.7
+    - workflow-step-api:2.16
+    - workflow-support:2.22
+  # Used to approve a list of groovy functions in pipelines used the script-security plugin. Can be viewed under /scriptApproval
+  ScriptApproval:
+    - method com.amazonaws.services.athena.model.Datum getVarCharValue
+    - method com.amazonaws.services.athena.model.Datum setVarCharValue java.lang.String
+    - method com.amazonaws.services.athena.model.ResultSet getRows
+    - method com.amazonaws.services.athena.model.Row getData
+    - method groovy.json.JsonSlurperClassic parseText java.lang.String
+    - method groovy.lang.GroovyObject getProperty java.lang.String
+    - method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object
+    - method groovy.lang.GroovyObject setProperty java.lang.String java.lang.Object
+    - method hudson.model.Cause getShortDescription
+    - method hudson.model.Run getCause java.lang.Class
+    - method java.lang.String join java.lang.CharSequence java.lang.CharSequence[]
+    - method org.jenkinsci.plugins.workflow.support.actions.EnvironmentAction getEnvironment
+    - method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild
+    - new com.amazonaws.services.athena.model.Datum
+    - new com.amazonaws.services.athena.model.Row
+    - new groovy.json.JsonBuilder java.lang.Object
+    - new groovy.json.JsonSlurperClassic
+    - new groovy.xml.MarkupBuilder java.io.Writer
+    - new java.io.File java.lang.String
+    - new net.sf.json.JSONArray
+    - new net.sf.json.JSONObject
+    - staticMethod com.amazonaws.services.ecs.AmazonECSClientBuilder standard
+    - staticMethod java.lang.System getenv
+    - staticMethod jenkins.model.Jenkins getInstance
+    - staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.Object[] groovy.lang.IntRange
+    - staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.Object[] java.util.Collection
+    - staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getProperties java.lang.Object
+    - staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getText java.io.File
+    - staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods minus java.lang.String java.lang.Object
+    - staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods newOutputStream java.io.File
+    - staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods toInteger java.lang.Number
+    - staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods write java.io.File java.lang.String
+    - method groovy.lang.GroovyObject getProperty java.lang.String
+    - method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object
+    - method groovy.lang.GroovyObject setProperty java.lang.String java.lang.Object
+    - method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild
+    - new java.io.File java.lang.String
+    - staticMethod java.lang.System getenv
+    - staticMethod jenkins.model.Jenkins getInstance
+    - staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getProperties java.lang.Object
+  # List of groovy init scripts to be executed during Jenkins master start
+  InitScripts:
+  #  - |
+  #    print 'adding global pipeline libraries, register properties, bootstrap jobs...'
+  # Kubernetes secret that contains a 'credentials.xml' for Jenkins
+  # CredentialsXmlSecret: jenkins-credentials
+  # Kubernetes secret that contains files to be put in the Jenkins 'secrets' directory,
+  # useful to manage encryption keys used for credentials.xml for instance (such as
+  # master.key and hudson.util.Secret)
+  # SecretsFilesSecret: jenkins-secrets
+  # Jenkins XML job configs to provision
+#  Jobs: |-
+#    job-1: |-
+
+  CustomConfigMap: false
+  # By default, the configMap is only used to set the initial config the first time
+  # that the chart is installed.  Setting `OverwriteConfig` to `true` will overwrite
+  # the jenkins config with the contents of the configMap every time the pod starts.
+  OverwriteConfig: false
+  # Node labels and tolerations for pod assignment
+  # ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+  # ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#taints-and-tolerations-beta-feature
+  NodeSelector:
+    kubernetes.io/role: operations-node
+  Tolerations:
+    - key: dedicated
+      operator: Equal
+      value: operations
+      effect: NoSchedule
+  PodAnnotations:
+    iam.amazonaws.com/role: arn:aws:iam::692024438073:role/jenkins
+
+  Ingress:
+    ApiVersion: extensions/v1beta1
+    Annotations:
+     kubernetes.io/ingress.class: nginx-internal
+    # kubernetes.io/tls-acme: "true"
+
+    # Set this path to JenkinsUriPrefix above or use annotations to rewrite path
+    # Path: "/jenkins"
+
+    TLS: {}
+#     - secretName: k8s-example-com-cert
+#       hosts:
+#         - jenkins.k8s.example.com
+
+  AdditionalConfig: {}
+
+Agent:
+  Enabled: true
+  Image: jenkins/jnlp-slave
+  ImageTag: 3.27-1
+  CustomJenkinsLabels: []
+  Component: jenkins-slave
+  Privileged: false
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 1025m
+      memory: 512Mi
+  # You may want to change this to true while testing a new image
+  AlwaysPullImage: false
+  # Controls how slave pods are retained after the Jenkins build completes
+  # Possible values: Always, Never, OnFailure
+  PodRetention: Never
+  # You can define the volumes that you want to mount for this container
+  # Allowed types are: ConfigMap, EmptyDir, HostPath, Nfs, Pod, Secret
+  # Configure the attributes as they appear in the corresponding Java class for that type
+  # https://github.com/jenkinsci/kubernetes-plugin/tree/master/src/main/java/org/csanchez/jenkins/plugins/kubernetes/volumes
+  volumes:
+  # - type: Secret
+  #   secretName: mysecret
+  #   mountPath: /var/myapp/mysecret
+  NodeSelector:
+    kubernetes.io/role: operations-node
+
+Persistence:
+  Enabled: true
+  ## A manually managed Persistent Volume and Claim
+  ## Requires Persistence.Enabled: true
+  ## If defined, PVC must be created manually before volume will be bound
+  # ExistingClaim:
+
+  ## jenkins data Persistent Volume Storage Class
+  ## If defined, storageClassName: <storageClass>
+  ## If set to "-", storageClassName: "", which disables dynamic provisioning
+  ## If undefined (the default) or set to null, no storageClassName spec is
+  ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+  ##   GKE, AWS & OpenStack)
+  ##
+#  StorageClass:
+
+  Annotations: {}
+  AccessMode: ReadWriteOnce
+  Size: 15Gi
+  volumes:
+  #  - name: nothing
+  #    emptyDir: {}
+  mounts:
+  #  - mountPath: /var/nothing
+  #    name: nothing
+  #    readOnly: true
+
+NetworkPolicy:
+  # Enable creation of NetworkPolicy resources.
+  Enabled: false
+  # For Kubernetes v1.4, v1.5 and v1.6, use 'extensions/v1beta1'
+  # For Kubernetes v1.7, use 'networking.k8s.io/v1'
+  ApiVersion: extensions/v1beta1
+
+## Install Default RBAC roles and bindings
+rbac:
+  install: true
+  serviceAccountName: jenkins
+  # Role reference
+  roleRef: cluster-admin
+  # Role kind (RoleBinding or ClusterRoleBinding)
+  roleBindingKind: ClusterRoleBinding
